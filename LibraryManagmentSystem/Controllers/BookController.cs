@@ -93,7 +93,6 @@ namespace LibraryManagmentSystem.Controllers
                 return BadRequest("Id mismatch between route and body.");
             }
 
-            // Basic validation
             if (string.IsNullOrEmpty(book.Title) || string.IsNullOrEmpty(book.Author) || string.IsNullOrEmpty(book.ISBN))
             {
                 return BadRequest("Title, Author, and ISBN are required.");
@@ -116,7 +115,6 @@ namespace LibraryManagmentSystem.Controllers
                         return NotFound();
                     }
 
-                    // Update fields, preserving original CreatedAt
                     existingBook.Title = book.Title;
                     existingBook.Author = book.Author;
                     existingBook.ISBN = book.ISBN;
@@ -126,7 +124,7 @@ namespace LibraryManagmentSystem.Controllers
                     existingBook.Available_Copies = book.Available_Copies;
                     existingBook.Description = book.Description;
                     existingBook.IsActive = book.IsActive;
-                    existingBook.UpdatedAt = book.UpdatedAt != default(DateTime) ? book.UpdatedAt : DateTime.Now; // Use provided UpdatedAt or current time
+                    existingBook.UpdatedAt = book.UpdatedAt != default(DateTime) ? book.UpdatedAt : DateTime.Now;
 
                     db.SaveChanges();
                     return Ok(existingBook);
@@ -139,6 +137,32 @@ namespace LibraryManagmentSystem.Controllers
                     .Select(e => $"{e.PropertyName}: {e.ErrorMessage}");
                 var fullErrorMessage = "Validation failed: " + string.Join("; ", errorMessages);
                 return BadRequest(fullErrorMessage);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"An error occurred: {ex.Message}");
+            }
+        }
+
+        [HttpDelete]
+        public IHttpActionResult Delete(int id)
+        {
+            try
+            {
+                using (LibraryDBEntities db = new LibraryDBEntities())
+                {
+                    db.Configuration.ProxyCreationEnabled = false;
+
+                    var book = db.Books.FirstOrDefault(b => b.Id == id);
+                    if (book == null)
+                    {
+                        return NotFound();
+                    }
+
+                    db.Books.Remove(book);
+                    db.SaveChanges();
+                    return StatusCode(HttpStatusCode.NoContent);
+                }
             }
             catch (Exception ex)
             {

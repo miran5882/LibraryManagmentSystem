@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Web.Http;
 
 namespace LibraryManagmentSystem.Controllers
@@ -86,7 +87,6 @@ namespace LibraryManagmentSystem.Controllers
                 return BadRequest("Id mismatch between route and body.");
             }
 
-            // Basic validation
             if (string.IsNullOrEmpty(role.RoleName))
             {
                 return BadRequest("RoleName is required.");
@@ -104,10 +104,9 @@ namespace LibraryManagmentSystem.Controllers
                         return NotFound();
                     }
 
-                    // Update fields, preserving original CreatedAt
                     existingRole.RoleName = role.RoleName;
                     existingRole.Description = role.Description;
-                    existingRole.UpdatedAt = role.UpdatedAt != default(DateTime) ? role.UpdatedAt : DateTime.Now; // Use provided UpdatedAt or current time
+                    existingRole.UpdatedAt = role.UpdatedAt != default(DateTime) ? role.UpdatedAt : DateTime.Now;
 
                     db.SaveChanges();
                     return Ok(existingRole);
@@ -120,6 +119,32 @@ namespace LibraryManagmentSystem.Controllers
                     .Select(e => $"{e.PropertyName}: {e.ErrorMessage}");
                 var fullErrorMessage = "Validation failed: " + string.Join("; ", errorMessages);
                 return BadRequest(fullErrorMessage);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"An error occurred: {ex.Message}");
+            }
+        }
+
+        [HttpDelete]
+        public IHttpActionResult Delete(int id)
+        {
+            try
+            {
+                using (LibraryDBEntities db = new LibraryDBEntities())
+                {
+                    db.Configuration.ProxyCreationEnabled = false;
+
+                    var role = db.Roles.FirstOrDefault(r => r.Id == id);
+                    if (role == null)
+                    {
+                        return NotFound();
+                    }
+
+                    db.Roles.Remove(role);
+                    db.SaveChanges();
+                    return StatusCode(HttpStatusCode.NoContent);
+                }
             }
             catch (Exception ex)
             {

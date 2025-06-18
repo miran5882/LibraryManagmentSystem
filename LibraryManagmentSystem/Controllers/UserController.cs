@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Web.Http;
 
 namespace LibraryManagmentSystem.Controllers
@@ -98,7 +99,6 @@ namespace LibraryManagmentSystem.Controllers
                 return BadRequest("Id mismatch between route and body.");
             }
 
-            // Basic validation
             if (string.IsNullOrEmpty(user.FirstName) || string.IsNullOrEmpty(user.LastName) ||
                 string.IsNullOrEmpty(user.Email) || string.IsNullOrEmpty(user.PasswordHash))
             {
@@ -117,14 +117,13 @@ namespace LibraryManagmentSystem.Controllers
                         return NotFound();
                     }
 
-                    // Update fields
                     existingUser.FirstName = user.FirstName;
                     existingUser.LastName = user.LastName;
                     existingUser.Email = user.Email;
                     existingUser.PasswordHash = user.PasswordHash;
                     existingUser.RoleId = user.RoleId;
                     existingUser.IsActive = user.IsActive;
-                    existingUser.UpdatedAt = DateTime.Now; // Update the timestamp
+                    existingUser.UpdatedAt = DateTime.Now;
 
                     db.SaveChanges();
                     return Ok(existingUser);
@@ -137,6 +136,32 @@ namespace LibraryManagmentSystem.Controllers
                     .Select(e => $"{e.PropertyName}: {e.ErrorMessage}");
                 var fullErrorMessage = "Validation failed: " + string.Join("; ", errorMessages);
                 return BadRequest(fullErrorMessage);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"An error occurred: {ex.Message}");
+            }
+        }
+
+        [HttpDelete]
+        public IHttpActionResult Delete(int id)
+        {
+            try
+            {
+                using (LibraryDBEntities db = new LibraryDBEntities())
+                {
+                    db.Configuration.ProxyCreationEnabled = false;
+
+                    var user = db.Users.FirstOrDefault(u => u.Id == id);
+                    if (user == null)
+                    {
+                        return NotFound();
+                    }
+
+                    db.Users.Remove(user);
+                    db.SaveChanges();
+                    return StatusCode(HttpStatusCode.NoContent);
+                }
             }
             catch (Exception ex)
             {
