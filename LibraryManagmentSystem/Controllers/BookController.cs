@@ -1,15 +1,23 @@
-﻿using System;
+﻿using LibraryManagmentSystem.Models;
+using Microsoft.IdentityModel.Tokens;
+using System;
 using System.Collections.Generic;
+using System.Configuration;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Security.Claims;
+using System.Text;
 using System.Web.Http;
-using LibraryManagmentSystem.Models;
+using System.Web.Http.Description;
 
 namespace LibraryManagmentSystem.Controllers
 {
+    [Authorize]
     public class BookController : ApiController
     {
+        // GET api/Book
         public IEnumerable<Book> Get()
         {
             using (LibraryDBEntities db = new LibraryDBEntities())
@@ -17,7 +25,7 @@ namespace LibraryManagmentSystem.Controllers
                 return db.Books.ToList();
             }
         }
-
+        // GET api/Book/id
         public Book Get(int id)
         {
             using (LibraryDBEntities db = new LibraryDBEntities())
@@ -25,7 +33,7 @@ namespace LibraryManagmentSystem.Controllers
                 return db.Books.FirstOrDefault(b => b.Id == id);
             }
         }
-
+        // POST api/Book
         [HttpPost]
         public IHttpActionResult Post([FromBody] Book book)
         {
@@ -79,7 +87,7 @@ namespace LibraryManagmentSystem.Controllers
                 return BadRequest($"An error occurred: {ex.Message}");
             }
         }
-
+        // PUT api/Book/id
         [HttpPut]
         public IHttpActionResult Put(int id, [FromBody] Book book)
         {
@@ -144,6 +152,7 @@ namespace LibraryManagmentSystem.Controllers
             }
         }
 
+        // DELETE api/Book/id
         [HttpDelete]
         public IHttpActionResult Delete(int id)
         {
@@ -168,6 +177,16 @@ namespace LibraryManagmentSystem.Controllers
             {
                 return BadRequest($"An error occurred: {ex.Message}");
             }
+        }
+
+                protected override void Dispose(bool disposing)
+        {
+            using (LibraryDBEntities db = new LibraryDBEntities())
+                if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }

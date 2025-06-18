@@ -151,5 +151,14 @@ namespace LibraryManagmentSystem.Controllers
                 return BadRequest($"An error occurred: {ex.Message}");
             }
         }
+        protected override void Dispose(bool disposing)
+        {
+            using (LibraryDBEntities db = new LibraryDBEntities())
+                if (disposing)
+                {
+                    db.Dispose();
+                }
+            base.Dispose(disposing);
+        }
     }
 }
