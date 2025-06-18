@@ -34,6 +34,58 @@ namespace LibraryManagmentSystem.Controllers
                 return BadRequest("Role data is null.");
             }
 
+            if (string.IsNullOrEmpty(role.RoleName))
+            {
+                return BadRequest("RoleName is required.");
+            }
+
+            try
+            {
+                using (LibraryDBEntities db = new LibraryDBEntities())
+                {
+                    db.Configuration.ProxyCreationEnabled = false;
+
+                    if (db.Roles.Any(r => r.RoleName == role.RoleName))
+                    {
+                        return BadRequest("A role with this name already exists.");
+                    }
+
+                    role.Id = 0;
+                    role.CreatedAt = DateTime.Now;
+                    role.UpdatedAt = DateTime.Now;
+
+                    db.Roles.Add(role);
+                    db.SaveChanges();
+                    return CreatedAtRoute("DefaultApi", new { id = role.Id }, role);
+                }
+            }
+            catch (System.Data.Entity.Validation.DbEntityValidationException ex)
+            {
+                var errorMessages = ex.EntityValidationErrors
+                    .SelectMany(e => e.ValidationErrors)
+                    .Select(e => $"{e.PropertyName}: {e.ErrorMessage}");
+                var fullErrorMessage = "Validation failed: " + string.Join("; ", errorMessages);
+                return BadRequest(fullErrorMessage);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"An error occurred: {ex.Message}");
+            }
+        }
+
+        [HttpPut]
+        public IHttpActionResult Put(int id, [FromBody] Role role)
+        {
+            if (role == null)
+            {
+                return BadRequest("Role data is null.");
+            }
+
+            if (id != role.Id)
+            {
+                return BadRequest("Id mismatch between route and body.");
+            }
+
             // Basic validation
             if (string.IsNullOrEmpty(role.RoleName))
             {
@@ -44,30 +96,21 @@ namespace LibraryManagmentSystem.Controllers
             {
                 using (LibraryDBEntities db = new LibraryDBEntities())
                 {
-                    db.Configuration.ProxyCreationEnabled = false; // Disable proxy creation
+                    db.Configuration.ProxyCreationEnabled = false;
 
-                    // Check if RoleName already exists (since RoleName is UNIQUE in the database)
-                    if (db.Roles.Any(r => r.RoleName == role.RoleName))
+                    var existingRole = db.Roles.FirstOrDefault(r => r.Id == id);
+                    if (existingRole == null)
                     {
-                        return BadRequest("A role with this name already exists.");
+                        return NotFound();
                     }
 
-                    // Ensure Id is not set (let the database generate it)
-                    role.Id = 0;
+                    // Update fields, preserving original CreatedAt
+                    existingRole.RoleName = role.RoleName;
+                    existingRole.Description = role.Description;
+                    existingRole.UpdatedAt = role.UpdatedAt != default(DateTime) ? role.UpdatedAt : DateTime.Now; // Use provided UpdatedAt or current time
 
-                    // Ensure CreatedAt and UpdatedAt are set if not provided
-                    if (role.CreatedAt == default(DateTime))
-                    {
-                        role.CreatedAt = DateTime.Now;
-                    }
-                    if (role.UpdatedAt == default(DateTime))
-                    {
-                        role.UpdatedAt = DateTime.Now;
-                    }
-
-                    db.Roles.Add(role);
                     db.SaveChanges();
-                    return CreatedAtRoute("DefaultApi", new { id = role.Id }, role);
+                    return Ok(existingRole);
                 }
             }
             catch (System.Data.Entity.Validation.DbEntityValidationException ex)

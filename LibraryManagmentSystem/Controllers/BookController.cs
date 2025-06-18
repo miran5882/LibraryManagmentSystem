@@ -34,6 +34,65 @@ namespace LibraryManagmentSystem.Controllers
                 return BadRequest("Book data is null.");
             }
 
+            if (string.IsNullOrEmpty(book.Title) || string.IsNullOrEmpty(book.Author) || string.IsNullOrEmpty(book.ISBN))
+            {
+                return BadRequest("Title, Author, and ISBN are required.");
+            }
+
+            if (book.Total_Copies < 0 || book.Available_Copies < 0 || book.Available_Copies > book.Total_Copies)
+            {
+                return BadRequest("Invalid copy counts.");
+            }
+
+            try
+            {
+                using (LibraryDBEntities db = new LibraryDBEntities())
+                {
+                    db.Configuration.ProxyCreationEnabled = false;
+
+                    if (book.CreatedAt == default(DateTime))
+                    {
+                        book.CreatedAt = DateTime.Now;
+                    }
+                    if (book.UpdatedAt == default(DateTime))
+                    {
+                        book.UpdatedAt = DateTime.Now;
+                    }
+
+                    book.Id = 0;
+
+                    db.Books.Add(book);
+                    db.SaveChanges();
+                    return CreatedAtRoute("DefaultApi", new { id = book.Id }, book);
+                }
+            }
+            catch (System.Data.Entity.Validation.DbEntityValidationException ex)
+            {
+                var errorMessages = ex.EntityValidationErrors
+                    .SelectMany(e => e.ValidationErrors)
+                    .Select(e => $"{e.PropertyName}: {e.ErrorMessage}");
+                var fullErrorMessage = "Validation failed: " + string.Join("; ", errorMessages);
+                return BadRequest(fullErrorMessage);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"An error occurred: {ex.Message}");
+            }
+        }
+
+        [HttpPut]
+        public IHttpActionResult Put(int id, [FromBody] Book book)
+        {
+            if (book == null)
+            {
+                return BadRequest("Book data is null.");
+            }
+
+            if (id != book.Id)
+            {
+                return BadRequest("Id mismatch between route and body.");
+            }
+
             // Basic validation
             if (string.IsNullOrEmpty(book.Title) || string.IsNullOrEmpty(book.Author) || string.IsNullOrEmpty(book.ISBN))
             {
@@ -49,29 +108,32 @@ namespace LibraryManagmentSystem.Controllers
             {
                 using (LibraryDBEntities db = new LibraryDBEntities())
                 {
-                    db.Configuration.ProxyCreationEnabled = false; // Disable proxy creation
+                    db.Configuration.ProxyCreationEnabled = false;
 
-                    // Ensure CreatedAt and UpdatedAt are set if not provided
-                    if (book.CreatedAt == default(DateTime))
+                    var existingBook = db.Books.FirstOrDefault(b => b.Id == id);
+                    if (existingBook == null)
                     {
-                        book.CreatedAt = DateTime.Now;
-                    }
-                    if (book.UpdatedAt == default(DateTime))
-                    {
-                        book.UpdatedAt = DateTime.Now;
+                        return NotFound();
                     }
 
-                    // Ensure Id is not set (let the database generate it)
-                    book.Id = 0; // EF will ignore this and let the database generate the Id
+                    // Update fields, preserving original CreatedAt
+                    existingBook.Title = book.Title;
+                    existingBook.Author = book.Author;
+                    existingBook.ISBN = book.ISBN;
+                    existingBook.Publication_Year = book.Publication_Year;
+                    existingBook.Category = book.Category;
+                    existingBook.Total_Copies = book.Total_Copies;
+                    existingBook.Available_Copies = book.Available_Copies;
+                    existingBook.Description = book.Description;
+                    existingBook.IsActive = book.IsActive;
+                    existingBook.UpdatedAt = book.UpdatedAt != default(DateTime) ? book.UpdatedAt : DateTime.Now; // Use provided UpdatedAt or current time
 
-                    db.Books.Add(book);
                     db.SaveChanges();
-                    return CreatedAtRoute("DefaultApi", new { id = book.Id }, book);
+                    return Ok(existingBook);
                 }
             }
             catch (System.Data.Entity.Validation.DbEntityValidationException ex)
             {
-                // Capture validation errors
                 var errorMessages = ex.EntityValidationErrors
                     .SelectMany(e => e.ValidationErrors)
                     .Select(e => $"{e.PropertyName}: {e.ErrorMessage}");
