@@ -95,14 +95,13 @@ Installation
 
 
 
-Clone the Repository:
+Clone the Repository:https://github.com/miran5882/LibraryManagmentSystem.git
 
 
 
 
 
-git clone https://github.com/yourusername/library-management-system (replace with your actual repo URL).
-
+git clone https://github.com/miran5882/LibraryManagmentSystem.git
 
 
 Open in Visual Studio:
@@ -155,7 +154,7 @@ Authentication
 
 
 
-Endpoint: POST https://localhost:44305/api/auth
+Endpoint: POST https://localhost:Port/api/auth
 
 
 
@@ -176,7 +175,7 @@ Secured Endpoints
 
 
 
-Books: https://localhost:44305/api/Book
+Books: https://localhost:Port/api/Book
 
 
 
@@ -198,7 +197,7 @@ DELETE: Delete a book (Admin).
 
 
 
-Roles: https://localhost:44305/api/Role
+Roles: https://localhost:Port/api/Role
 
 
 
@@ -212,7 +211,7 @@ POST/PUT/DELETE: Manage roles (Admin only).
 
 
 
-Users: https://localhost:44305/api/User
+Users: https://localhost:Port/api/User
 
 
 
@@ -247,6 +246,9 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 Contact
 
 For questions or support, please contact:
+
+Miran Ahmed,
+miranahmed5882@gmail.com
 
 
 
