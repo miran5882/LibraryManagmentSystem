@@ -14,10 +14,11 @@ using System.Web.Http.Description;
 
 namespace LibraryManagmentSystem.Controllers
 {
-    [Authorize]
+   
     public class BookController : ApiController
     {
         // GET api/Book
+        [Authorize(Roles = "Admin, In-Charge, Staff, Member")]
         public IEnumerable<Book> Get()
         {
             using (LibraryDBEntities db = new LibraryDBEntities())
@@ -26,6 +27,7 @@ namespace LibraryManagmentSystem.Controllers
             }
         }
         // GET api/Book/id
+        [Authorize(Roles = "Admin, In-Charge, Staff, Member")]
         public Book Get(int id)
         {
             using (LibraryDBEntities db = new LibraryDBEntities())
@@ -34,6 +36,7 @@ namespace LibraryManagmentSystem.Controllers
             }
         }
         // POST api/Book
+        [Authorize(Roles = "Admin, In-Charge")]
         [HttpPost]
         public IHttpActionResult Post([FromBody] Book book)
         {
@@ -88,6 +91,7 @@ namespace LibraryManagmentSystem.Controllers
             }
         }
         // PUT api/Book/id
+        [Authorize(Roles = "Admin, In-Charge")]
         [HttpPut]
         public IHttpActionResult Put(int id, [FromBody] Book book)
         {
@@ -153,6 +157,7 @@ namespace LibraryManagmentSystem.Controllers
         }
 
         // DELETE api/Book/id
+        [Authorize(Roles = "Admin, In-Charge")]
         [HttpDelete]
         public IHttpActionResult Delete(int id)
         {

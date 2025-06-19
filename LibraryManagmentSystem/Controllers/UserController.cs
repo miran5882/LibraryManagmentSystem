@@ -9,6 +9,8 @@ namespace LibraryManagmentSystem.Controllers
 {
     public class UserController : ApiController
     {
+        // GET api/User
+        [Authorize(Roles = "Admin, In-Charge")]
         public IEnumerable<User> Get()
         {
             using (LibraryDBEntities db = new LibraryDBEntities())
@@ -27,6 +29,8 @@ namespace LibraryManagmentSystem.Controllers
             }
         }
 
+        // POST api/User
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public IHttpActionResult Post([FromBody] User user)
         {
@@ -85,7 +89,8 @@ namespace LibraryManagmentSystem.Controllers
                 return BadRequest($"An error occurred: {ex.Message}");
             }
         }
-
+        // PUT api/User/id
+        [Authorize(Roles = "Admin")]
         [HttpPut]
         public IHttpActionResult Put(int id, [FromBody] User user)
         {
@@ -142,7 +147,8 @@ namespace LibraryManagmentSystem.Controllers
                 return BadRequest($"An error occurred: {ex.Message}");
             }
         }
-
+        // DELETE api/User/id
+        [Authorize(Roles = "Admin")]
         [HttpDelete]
         public IHttpActionResult Delete(int id)
         {

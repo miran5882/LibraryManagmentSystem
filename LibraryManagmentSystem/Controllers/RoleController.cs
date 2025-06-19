@@ -7,8 +7,11 @@ using System.Web.Http;
 
 namespace LibraryManagmentSystem.Controllers
 {
+    
     public class RoleController : ApiController
     {
+        // GET api/Role
+        [Authorize(Roles = "Admin")]
         public IEnumerable<Role> Get()
         {
             using (LibraryDBEntities db = new LibraryDBEntities())
@@ -18,6 +21,8 @@ namespace LibraryManagmentSystem.Controllers
             }
         }
 
+        // GET api/Role/id
+        [Authorize(Roles = "Admin")]
         public Role Get(int id)
         {
             using (LibraryDBEntities db = new LibraryDBEntities())
@@ -27,6 +32,8 @@ namespace LibraryManagmentSystem.Controllers
             }
         }
 
+        // POST api/Role
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public IHttpActionResult Post([FromBody] Role role)
         {
@@ -74,6 +81,8 @@ namespace LibraryManagmentSystem.Controllers
             }
         }
 
+        // PUT api/Role/id
+        [Authorize(Roles = "Admin")]
         [HttpPut]
         public IHttpActionResult Put(int id, [FromBody] Role role)
         {
@@ -126,6 +135,8 @@ namespace LibraryManagmentSystem.Controllers
             }
         }
 
+        // DELETE api/Role/id
+        [Authorize(Roles = "Admin")]
         [HttpDelete]
         public IHttpActionResult Delete(int id)
         {
