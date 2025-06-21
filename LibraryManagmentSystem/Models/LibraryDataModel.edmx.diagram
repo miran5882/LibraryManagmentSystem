@@ -4,11 +4,19 @@
   <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
     <!-- Diagram content (shape and connector positions) -->
     <edmx:Diagrams>
-      <Diagram DiagramId="b512dc7799914f6889bd3265c4c6b648" Name="Diagram1" ZoomLevel="64">
+      <Diagram DiagramId="b512dc7799914f6889bd3265c4c6b648" Name="Diagram1" ZoomLevel="95">
         <EntityTypeShape EntityType="LibraryModel.Book" Width="1.5" PointX="0.75" PointY="0.75" IsExpanded="true" />
         <EntityTypeShape EntityType="LibraryModel.Role" Width="1.5" PointX="3.375" PointY="1.375" IsExpanded="true" />
         <EntityTypeShape EntityType="LibraryModel.User" Width="1.5" PointX="5.625" PointY="1" />
         <AssociationConnector Association="LibraryModel.FK__Users__RoleId__52593CB8" />
+        <EntityTypeShape EntityType="LibraryModel.Author" Width="1.5" PointX="0.75" PointY="11.5" />
+        <EntityTypeShape EntityType="LibraryModel.Category" Width="1.5" PointX="0.75" PointY="9" />
+        <EntityTypeShape EntityType="LibraryModel.Publication" Width="1.5" PointX="0.75" PointY="6.375" />
+        <EntityTypeShape EntityType="LibraryModel.UserPermission" Width="1.5" PointX="5.625" PointY="5.5" />
+        <AssociationConnector Association="LibraryModel.FK__Books__CategoryI__70DDC3D8" />
+        <AssociationConnector Association="LibraryModel.FK__Books__Publicati__71D1E811" />
+        <AssociationConnector Association="LibraryModel.FK__UserPermi__RoleI__656C112C" />
+        <AssociationConnector Association="LibraryModel.BookAuthors" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>

@@ -12,24 +12,19 @@ namespace LibraryManagmentSystem.Models
     using System;
     using System.Collections.Generic;
     
-    public partial class Role
+    public partial class Publication
     {
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
-        public Role()
+        public Publication()
         {
-            this.Users = new HashSet<User>();
-            this.UserPermissions = new HashSet<UserPermission>();
+            this.Books = new HashSet<Book>();
         }
     
-        public int Id { get; set; }
-        public string RoleName { get; set; }
-        public string Description { get; set; }
-        public System.DateTime CreatedAt { get; set; }
-        public System.DateTime UpdatedAt { get; set; }
+        public int PublicationID { get; set; }
+        public string PublisherName { get; set; }
+        public int PublicationYear { get; set; }
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
-        public virtual ICollection<User> Users { get; set; }
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
-        public virtual ICollection<UserPermission> UserPermissions { get; set; }
+        public virtual ICollection<Book> Books { get; set; }
     }
 }

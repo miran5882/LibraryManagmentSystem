@@ -1,175 +1,101 @@
-﻿using LibraryManagmentSystem.Models;
+﻿using LibraryManagementSystem;
+using LibraryManagmentSystem.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Threading;
 using System.Web.Http;
+using System.Web.Http.Cors;
 
-namespace LibraryManagmentSystem.Controllers
+[EnableCors(origins: "http://localhost:44305", headers: "*", methods: "*")]
+public class RoleController : ApiController
 {
-    
-    public class RoleController : ApiController
+    private readonly LibraryDBEntities db = new LibraryDBEntities();
+
+    [HttpGet]
+    public IHttpActionResult Get()
     {
-        // GET api/Role
-        [Authorize(Roles = "Admin")]
-        public IEnumerable<Role> Get()
+        if (!HasPermission("Roles", "Read"))
+            return Unauthorized();
+        return Ok(db.Roles.ToList());
+    }
+
+    [HttpGet]
+    [Route("{id}")]
+    public IHttpActionResult Get(int id)
+    {
+        if (!HasPermission("Roles", "Read"))
+            return Unauthorized();
+        var role = db.Roles.FirstOrDefault(r => r.Id == id);
+        if (role == null)
+            return NotFound();
+        return Ok(role);
+    }
+
+    [HttpPost]
+    public IHttpActionResult Post([FromBody] Role role)
+    {
+        if (!HasPermission("Roles", "Create"))
+            return Unauthorized();
+        if (role == null || string.IsNullOrEmpty(role.RoleName))
+            return BadRequest("RoleName is required.");
+        db.Roles.Add(role);
+        db.SaveChanges();
+        return CreatedAtRoute("DefaultApi", new { id = role.Id }, role);
+    }
+
+    [HttpPut]
+    [Route("{id}")]
+    public IHttpActionResult Put(int id, [FromBody] Role role)
+    {
+        if (!HasPermission("Roles", "Update"))
+            return Unauthorized();
+        if (role == null || id != role.Id)
+            return BadRequest();
+        var existingRole = db.Roles.FirstOrDefault(r => r.Id == id);
+        if (existingRole == null)
+            return NotFound();
+        existingRole.RoleName = role.RoleName;
+        existingRole.Description = role.Description;
+        db.SaveChanges();
+        return Ok(existingRole);
+    }
+
+    [HttpDelete]
+    [Route("{id}")]
+    public IHttpActionResult Delete(int id)
+    {
+        if (!HasPermission("Roles", "Delete"))
+            return Unauthorized();
+        var role = db.Roles.FirstOrDefault(r => r.Id == id);
+        if (role == null)
+            return NotFound();
+        db.Roles.Remove(role);
+        db.SaveChanges();
+        return StatusCode(HttpStatusCode.NoContent);
+    }
+
+    private bool HasPermission(string resource, string action)
+    {
+        var roleId = GetCurrentUserRoleId();
+        return db.UserPermissions.Any(p => p.RoleID == roleId && p.Resource == resource && p.Action == action && p.IsAllowed);
+    }
+
+    private int GetCurrentUserRoleId()
+    {
+        var identity = (System.Security.Claims.ClaimsPrincipal)Thread.CurrentPrincipal;
+        var roleIdClaim = identity.Claims.FirstOrDefault(c => c.Type == "RoleId")?.Value;
+        return string.IsNullOrEmpty(roleIdClaim) ? 0 : int.Parse(roleIdClaim);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
         {
-            using (LibraryDBEntities db = new LibraryDBEntities())
-            {
-                db.Configuration.ProxyCreationEnabled = false;
-                return db.Roles.ToList();
-            }
+            db.Dispose();
         }
-
-        // GET api/Role/id
-        [Authorize(Roles = "Admin")]
-        public Role Get(int id)
-        {
-            using (LibraryDBEntities db = new LibraryDBEntities())
-            {
-                db.Configuration.ProxyCreationEnabled = false;
-                return db.Roles.FirstOrDefault(r => r.Id == id);
-            }
-        }
-
-        // POST api/Role
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        public IHttpActionResult Post([FromBody] Role role)
-        {
-            if (role == null)
-            {
-                return BadRequest("Role data is null.");
-            }
-
-            if (string.IsNullOrEmpty(role.RoleName))
-            {
-                return BadRequest("RoleName is required.");
-            }
-
-            try
-            {
-                using (LibraryDBEntities db = new LibraryDBEntities())
-                {
-                    db.Configuration.ProxyCreationEnabled = false;
-
-                    if (db.Roles.Any(r => r.RoleName == role.RoleName))
-                    {
-                        return BadRequest("A role with this name already exists.");
-                    }
-
-                    role.Id = 0;
-                    role.CreatedAt = DateTime.Now;
-                    role.UpdatedAt = DateTime.Now;
-
-                    db.Roles.Add(role);
-                    db.SaveChanges();
-                    return CreatedAtRoute("DefaultApi", new { id = role.Id }, role);
-                }
-            }
-            catch (System.Data.Entity.Validation.DbEntityValidationException ex)
-            {
-                var errorMessages = ex.EntityValidationErrors
-                    .SelectMany(e => e.ValidationErrors)
-                    .Select(e => $"{e.PropertyName}: {e.ErrorMessage}");
-                var fullErrorMessage = "Validation failed: " + string.Join("; ", errorMessages);
-                return BadRequest(fullErrorMessage);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"An error occurred: {ex.Message}");
-            }
-        }
-
-        // PUT api/Role/id
-        [Authorize(Roles = "Admin")]
-        [HttpPut]
-        public IHttpActionResult Put(int id, [FromBody] Role role)
-        {
-            if (role == null)
-            {
-                return BadRequest("Role data is null.");
-            }
-
-            if (id != role.Id)
-            {
-                return BadRequest("Id mismatch between route and body.");
-            }
-
-            if (string.IsNullOrEmpty(role.RoleName))
-            {
-                return BadRequest("RoleName is required.");
-            }
-
-            try
-            {
-                using (LibraryDBEntities db = new LibraryDBEntities())
-                {
-                    db.Configuration.ProxyCreationEnabled = false;
-
-                    var existingRole = db.Roles.FirstOrDefault(r => r.Id == id);
-                    if (existingRole == null)
-                    {
-                        return NotFound();
-                    }
-
-                    existingRole.RoleName = role.RoleName;
-                    existingRole.Description = role.Description;
-                    existingRole.UpdatedAt = role.UpdatedAt != default(DateTime) ? role.UpdatedAt : DateTime.Now;
-
-                    db.SaveChanges();
-                    return Ok(existingRole);
-                }
-            }
-            catch (System.Data.Entity.Validation.DbEntityValidationException ex)
-            {
-                var errorMessages = ex.EntityValidationErrors
-                    .SelectMany(e => e.ValidationErrors)
-                    .Select(e => $"{e.PropertyName}: {e.ErrorMessage}");
-                var fullErrorMessage = "Validation failed: " + string.Join("; ", errorMessages);
-                return BadRequest(fullErrorMessage);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"An error occurred: {ex.Message}");
-            }
-        }
-
-        // DELETE api/Role/id
-        [Authorize(Roles = "Admin")]
-        [HttpDelete]
-        public IHttpActionResult Delete(int id)
-        {
-            try
-            {
-                using (LibraryDBEntities db = new LibraryDBEntities())
-                {
-                    db.Configuration.ProxyCreationEnabled = false;
-
-                    var role = db.Roles.FirstOrDefault(r => r.Id == id);
-                    if (role == null)
-                    {
-                        return NotFound();
-                    }
-
-                    db.Roles.Remove(role);
-                    db.SaveChanges();
-                    return StatusCode(HttpStatusCode.NoContent);
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"An error occurred: {ex.Message}");
-            }
-        }
-        protected override void Dispose(bool disposing)
-        {
-            using (LibraryDBEntities db = new LibraryDBEntities())
-                if (disposing)
-                {
-                    db.Dispose();
-                }
-            base.Dispose(disposing);
-        }
+        base.Dispose(disposing);
     }
 }

@@ -1,197 +1,136 @@
-﻿using LibraryManagmentSystem.Models;
-using Microsoft.IdentityModel.Tokens;
+﻿using LibraryManagementSystem;
+using LibraryManagmentSystem.Models;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Security.Claims;
-using System.Text;
+using System.Threading;
 using System.Web.Http;
-using System.Web.Http.Description;
+using System.Web.Http.Cors;
 
-namespace LibraryManagmentSystem.Controllers
+[EnableCors(origins: "http://localhost:44305", headers: "*", methods: "*")]
+public class BookController : ApiController
 {
-   
-    public class BookController : ApiController
+    private readonly LibraryDBEntities db = new LibraryDBEntities();
+
+    [HttpGet]
+    public IHttpActionResult Get()
     {
-        // GET api/Book
-        [Authorize(Roles = "Admin, In-Charge, Staff, Member")]
-        public IEnumerable<Book> Get()
+        if (!HasPermission("Books", "Read"))
+            return Unauthorized();
+        var books = db.Books
+            .Include("Category")
+            .Include("Publication")
+            .Select(b => new
+            {
+                Id = b.Id,
+                Title = b.Title,
+                Author = b.Author, 
+                ISBN = b.ISBN,
+                PublicationDate = b.PublicationDate,
+                AvailabilityStatus = b.IsActive,
+                Category = b.Category,
+                Publisher = b.Publication.PublisherName,
+                PublicationYear = b.Publication.PublicationYear
+            })
+            .ToList();
+        return Ok(books);
+    }
+
+    [HttpGet]
+    [Route("{id}")]
+    public IHttpActionResult Get(int id)
+    {
+        if (!HasPermission("Books", "Read"))
+            return Unauthorized();
+        var book = db.Books
+            .Include("Category")
+            .Include("Publication")
+            .FirstOrDefault(b => b.Id == id);
+        if (book == null)
+            return NotFound();
+        return Ok(new
         {
-            using (LibraryDBEntities db = new LibraryDBEntities())
-            {
-                return db.Books.ToList();
-            }
-        }
-        // GET api/Book/id
-        [Authorize(Roles = "Admin, In-Charge, Staff, Member")]
-        public Book Get(int id)
+            Id = book.Id,
+            Title = book.Title,
+            Author = book.Author,
+            ISBN = book.ISBN,
+            PublicationDate = book.PublicationDate,
+            AvailabilityStatus = book.IsActive,
+            Category = book.Category,
+            Publisher = book.Publication.PublisherName,
+            PublicationYear = book.Publication.PublicationYear
+        });
+    }
+
+    [HttpPost]
+    public IHttpActionResult Post([FromBody] Book book)
+    {
+        if (!HasPermission("Books", "Create"))
+            return Unauthorized();
+        if (book == null || string.IsNullOrEmpty(book.Title) || string.IsNullOrEmpty(book.ISBN))
+            return BadRequest("Title and ISBN are required.");
+        db.Books.Add(book);
+        db.SaveChanges();
+        return CreatedAtRoute("DefaultApi", new { id = book.Id }, book);
+    }
+
+    [HttpPut]
+    [Route("{id}")]
+    public IHttpActionResult Put(int id, [FromBody] Book book)
+    {
+        if (!HasPermission("Books", "Update"))
+            return Unauthorized();
+        if (book == null || id != book.Id)
+            return BadRequest();
+        var existingBook = db.Books.FirstOrDefault(b => b.Id == id);
+        if (existingBook == null)
+            return NotFound();
+        existingBook.Title = book.Title;
+        existingBook.Author = book.Author;
+        existingBook.ISBN = book.ISBN;
+        existingBook.PublicationDate = book.PublicationDate;
+        existingBook.IsActive = book.IsActive;
+        existingBook.CategoryID = book.CategoryID;
+        existingBook.PublicationID = book.PublicationID;
+        db.SaveChanges();
+        return Ok(existingBook);
+    }
+
+    [HttpDelete]
+    [Route("{id}")]
+    public IHttpActionResult Delete(int id)
+    {
+        if (!HasPermission("Books", "Delete"))
+            return Unauthorized();
+        var book = db.Books.FirstOrDefault(b => b.Id == id);
+        if (book == null)
+            return NotFound();
+        db.Books.Remove(book);
+        db.SaveChanges();
+        return StatusCode(HttpStatusCode.NoContent);
+    }
+
+    private bool HasPermission(string resource, string action)
+    {
+        var roleId = GetCurrentUserRoleId();
+        return db.UserPermissions.Any(p => p.RoleID == roleId && p.Resource == resource && p.Action == action && p.IsAllowed);
+    }
+
+    private int GetCurrentUserRoleId()
+    {
+        var identity = (System.Security.Claims.ClaimsPrincipal)Thread.CurrentPrincipal;
+        var roleIdClaim = identity.Claims.FirstOrDefault(c => c.Type == "RoleId")?.Value;
+        return string.IsNullOrEmpty(roleIdClaim) ? 0 : int.Parse(roleIdClaim);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
         {
-            using (LibraryDBEntities db = new LibraryDBEntities())
-            {
-                return db.Books.FirstOrDefault(b => b.Id == id);
-            }
+            db.Dispose();
         }
-        // POST api/Book
-        [Authorize(Roles = "Admin, In-Charge")]
-        [HttpPost]
-        public IHttpActionResult Post([FromBody] Book book)
-        {
-            if (book == null)
-            {
-                return BadRequest("Book data is null.");
-            }
-
-            if (string.IsNullOrEmpty(book.Title) || string.IsNullOrEmpty(book.Author) || string.IsNullOrEmpty(book.ISBN))
-            {
-                return BadRequest("Title, Author, and ISBN are required.");
-            }
-
-            if (book.Total_Copies < 0 || book.Available_Copies < 0 || book.Available_Copies > book.Total_Copies)
-            {
-                return BadRequest("Invalid copy counts.");
-            }
-
-            try
-            {
-                using (LibraryDBEntities db = new LibraryDBEntities())
-                {
-                    db.Configuration.ProxyCreationEnabled = false;
-
-                    if (book.CreatedAt == default(DateTime))
-                    {
-                        book.CreatedAt = DateTime.Now;
-                    }
-                    if (book.UpdatedAt == default(DateTime))
-                    {
-                        book.UpdatedAt = DateTime.Now;
-                    }
-
-                    book.Id = 0;
-
-                    db.Books.Add(book);
-                    db.SaveChanges();
-                    return CreatedAtRoute("DefaultApi", new { id = book.Id }, book);
-                }
-            }
-            catch (System.Data.Entity.Validation.DbEntityValidationException ex)
-            {
-                var errorMessages = ex.EntityValidationErrors
-                    .SelectMany(e => e.ValidationErrors)
-                    .Select(e => $"{e.PropertyName}: {e.ErrorMessage}");
-                var fullErrorMessage = "Validation failed: " + string.Join("; ", errorMessages);
-                return BadRequest(fullErrorMessage);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"An error occurred: {ex.Message}");
-            }
-        }
-        // PUT api/Book/id
-        [Authorize(Roles = "Admin, In-Charge")]
-        [HttpPut]
-        public IHttpActionResult Put(int id, [FromBody] Book book)
-        {
-            if (book == null)
-            {
-                return BadRequest("Book data is null.");
-            }
-
-            if (id != book.Id)
-            {
-                return BadRequest("Id mismatch between route and body.");
-            }
-
-            if (string.IsNullOrEmpty(book.Title) || string.IsNullOrEmpty(book.Author) || string.IsNullOrEmpty(book.ISBN))
-            {
-                return BadRequest("Title, Author, and ISBN are required.");
-            }
-
-            if (book.Total_Copies < 0 || book.Available_Copies < 0 || book.Available_Copies > book.Total_Copies)
-            {
-                return BadRequest("Invalid copy counts.");
-            }
-
-            try
-            {
-                using (LibraryDBEntities db = new LibraryDBEntities())
-                {
-                    db.Configuration.ProxyCreationEnabled = false;
-
-                    var existingBook = db.Books.FirstOrDefault(b => b.Id == id);
-                    if (existingBook == null)
-                    {
-                        return NotFound();
-                    }
-
-                    existingBook.Title = book.Title;
-                    existingBook.Author = book.Author;
-                    existingBook.ISBN = book.ISBN;
-                    existingBook.Publication_Year = book.Publication_Year;
-                    existingBook.Category = book.Category;
-                    existingBook.Total_Copies = book.Total_Copies;
-                    existingBook.Available_Copies = book.Available_Copies;
-                    existingBook.Description = book.Description;
-                    existingBook.IsActive = book.IsActive;
-                    existingBook.UpdatedAt = book.UpdatedAt != default(DateTime) ? book.UpdatedAt : DateTime.Now;
-
-                    db.SaveChanges();
-                    return Ok(existingBook);
-                }
-            }
-            catch (System.Data.Entity.Validation.DbEntityValidationException ex)
-            {
-                var errorMessages = ex.EntityValidationErrors
-                    .SelectMany(e => e.ValidationErrors)
-                    .Select(e => $"{e.PropertyName}: {e.ErrorMessage}");
-                var fullErrorMessage = "Validation failed: " + string.Join("; ", errorMessages);
-                return BadRequest(fullErrorMessage);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"An error occurred: {ex.Message}");
-            }
-        }
-
-        // DELETE api/Book/id
-        [Authorize(Roles = "Admin, In-Charge")]
-        [HttpDelete]
-        public IHttpActionResult Delete(int id)
-        {
-            try
-            {
-                using (LibraryDBEntities db = new LibraryDBEntities())
-                {
-                    db.Configuration.ProxyCreationEnabled = false;
-
-                    var book = db.Books.FirstOrDefault(b => b.Id == id);
-                    if (book == null)
-                    {
-                        return NotFound();
-                    }
-
-                    db.Books.Remove(book);
-                    db.SaveChanges();
-                    return StatusCode(HttpStatusCode.NoContent);
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"An error occurred: {ex.Message}");
-            }
-        }
-
-                protected override void Dispose(bool disposing)
-        {
-            using (LibraryDBEntities db = new LibraryDBEntities())
-                if (disposing)
-            {
-                db.Dispose();
-            }
-            base.Dispose(disposing);
-        }
+        base.Dispose(disposing);
     }
 }

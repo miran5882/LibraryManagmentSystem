@@ -144,10 +144,17 @@
     <Compile Include="Controllers\BookController.cs" />
     <Compile Include="Controllers\RoleController.cs" />
     <Compile Include="Controllers\UserController.cs" />
+    <Compile Include="Controllers\UserPermissionsController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\Author.cs">
+      <DependentUpon>LibraryDataModel.tt</DependentUpon>
+    </Compile>
     <Compile Include="Models\Book.cs">
+      <DependentUpon>LibraryDataModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Models\Category.cs">
       <DependentUpon>LibraryDataModel.tt</DependentUpon>
     </Compile>
     <Compile Include="Models\LibraryDataModel.Context.cs">
@@ -165,10 +172,16 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>LibraryDataModel.edmx</DependentUpon>
     </Compile>
+    <Compile Include="Models\Publication.cs">
+      <DependentUpon>LibraryDataModel.tt</DependentUpon>
+    </Compile>
     <Compile Include="Models\Role.cs">
       <DependentUpon>LibraryDataModel.tt</DependentUpon>
     </Compile>
     <Compile Include="Models\User.cs">
+      <DependentUpon>LibraryDataModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Models\UserPermission.cs">
       <DependentUpon>LibraryDataModel.tt</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />

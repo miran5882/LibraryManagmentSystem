@@ -14,6 +14,12 @@ namespace LibraryManagmentSystem.Models
     
     public partial class Book
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
+        public Book()
+        {
+            this.Authors = new HashSet<Author>();
+        }
+    
         public int Id { get; set; }
         public string Title { get; set; }
         public string Author { get; set; }
@@ -26,5 +32,13 @@ namespace LibraryManagmentSystem.Models
         public bool IsActive { get; set; }
         public System.DateTime CreatedAt { get; set; }
         public System.DateTime UpdatedAt { get; set; }
+        public Nullable<int> CategoryID { get; set; }
+        public Nullable<int> PublicationID { get; set; }
+        public Nullable<System.DateTime> PublicationDate { get; set; }
+    
+        public virtual Category Category1 { get; set; }
+        public virtual Publication Publication { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<Author> Authors { get; set; }
     }
 }
